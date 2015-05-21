@@ -1,0 +1,66 @@
+= Haskell: Kalah =
+
+* Responsabili: [[mmihnea@gmail.com|Mihnea Muraru]], [[lucian.mogosanu@cs.pub.ro|Lucian Mogo?anu]]
+* Deadline: 06.05.2015
+* Data publicãrii: 09.04.2015
+* Data ultimei modificãri: 09.04.2015
+* Data arhivei: 09.04.2015
+
+== Obiective ==
+
+* utilizarea mecanismelor **func?ionale** ?i de **tipuri** ale limbajului Haskell pentru implementarea unui **joc** (//[[http://developoid.com/g/pocketmancala/|Kalah/Mancala]]//)
+* pentru bonus: exploatarea evaluãrii **lene?e** pentru explorarea controlatã a spa?iului stãrilor într-un algoritm de inteligen?ã artificialã (//Minimax//).
+
+== Descriere ==
+
+Scopul temei este implementarea jocului //[[http://developoid.com/g/pocketmancala/|Kalah]]// (denumit ?i //Mancala//). Modul de joc este descris [[http://en.wikipedia.org/wiki/Kalah#Equipment|aici]]. Se va implementa varianta de Kalah cu **48 de piese**.
+
+În final, programul vostru:
+
+# va permite jocul între **doi utilizatori umani**
+# îi va da posibilitatea unui jucãtor uman sã joace **împotriva calculatorului**, AI-ul fiind bazat pe o euristicã simplã
+# pentru **bonus**, AI-ul va implementa o euristicã mai complexã, bazatã pe algoritmul //minimax//.
+
+== Cerin?e ==
+
+Rezolvarea temei este structuratã pe etapele de mai jos. Începe?i prin a vã familiariza cu structura **arhivei** de [[#Resurse|resurse]]. În rezolvare, exploata?i **testele** drept cazuri de utilizare a func?iilor pe care le implementa?i.
+
+=== Tabla ?i mutãrile (90p) ===
+
+Implementa?i tipurile de date ?i func?iile din fi?ierul ''Board.hs'', conform indica?iilor locale. Testele aferente se gãsesc în fi?ierul ''BoardTest.hs''. Dupã implementarea (eventual par?ialã) a tablei ?i a mutãrilor, pute?i utiliza func?ia ''twoHumans'' din fi?ierul ''Interactive.hs'': introduce?i numãrul casei (de la ''1'' la ''6'', numerotat de la stânga la dreapta), urmat de ''Enter'', pentru precizarea mutãrilor.
+
+Pentru implementarea tablei de joc, ave?i în vedere utilizarea unei structuri de date care sã permitã parcurgerea ?i actualizarea u?oarã a numãrului de semin?e din fiecare casã. De asemenea, gândi?i structura ''Board'' astfel încât sã vã faciliteze implementarea func?iilor exportate de ''Board.hs''.
+=== Euristicã simplã (10p) ===
+
+Implementa?i func?ia ''step'' din fi?ierul ''AISimple.hs'', conform specifica?iilor locale. Euristica propusã este de aplicare a acelei mutãri care conduce la **scorul maxim** al calculatorului în pasul urmãtor. Testele aferente se gãsesc în fi?ierul ''AISimpleTest.hs''. Pentru testare, utiliza?i func?ia ''userMode'' din fi?ierul ''AISimple.hs''.
+=== Bonus: Minimax (20p) ===
+
+Abordarea precedentã are neajunsul cã este o solu?ie **lacomã** de explorare a posibilitã?ilor de joc. O solu?ie care mãre?te ?ansele de câ?tig al jucãtorului artificial este aceea care ia în calcul posibila evolu?ie ulterioarã a jocului. Astfel, algoritmul [[http://en.wikipedia.org/wiki/Minimax|Minimax]] exploreazã mutãrile posibile **viitoare** (pânã la un numãr dat), atât ale jucãtorului curent cât ?i ale adversarului, cãutând sã îi maximizeze celui dintâi ?ansele de câ?tig. Dat fiind faptul cã dimensiunea spa?iului de explorare poate fi intractabilã, deseori algoritmul include o componentã de limitare (//pruning//) a adâncimii de cãutare.
+
+În cazul Kalah, o posibilã abordare implicã aplicarea Minimax pentru maximizarea **câ?tigului** AI-ului atunci când acesta mutã, ?i minimizarea **pierderii** atunci când jucãtorul uman mutã. O particularitate a arborelui de stãri generat în cazul acesta este faptul cã un jucãtor poate juca douã ture consecutive, caz în care vor fi efectua?i doi pa?i consecutivi de maximizare sau de minimizare, în func?ie de jucãtorul curent.
+
+Astfel, implementarea voastrã va avea în vedere urmãtoarele func?ionalitã?i:
+
+* **Generarea** arborelui (posibil infinit) Minimax de stãri (//expand//)
+* **Limitarea** numãrului de niveluri ale arborelui la o valoare datã (//prune//)
+* **Evaluarea** trade-off-ului câ?tig/pierdere dupã o euristicã datã ?i alegerea pierderii minime în condi?iile în care adversarul joacã sã î?i maximizeze câ?tigul, conform Minimax (//pick//)
+
+În cazul particular al Kalah, func?ia de evaluare euristicã se va folosi atât de scorul AI-ului, cât ?i de cel al jucãtorului uman, pentru a determina **câ?tigul** adus de stare datã celui dintâi. Spre exemplu, o stare în care scorul jucãtorului uman este mai mare decât cel al AI-ului ar putea fi consideratã ca aducând un câ?tig negativ celui din urmã.
+
+Pentru o modularizare ?i reutilizare mai bunã a codului, implementarea va înrola tipul de date ''Board'' în clasa de tipuri ''Consecutive'', definitã în ''Consecutive.hs''. Este cerutã apoi implementarea genericã a algoritmului Minimax în fi?ierul ''AIMinimax.hs'', cât ?i particularizarea acestei implementãri în func?ia ''step''. Pentru a observa pas cu pas evolu?ia jocului, utiliza?i func?ia ''userMode'' din acela?i fi?ier. Testele aferente se gãsesc în fi?ierul ''AIMinimaxTest.hs''.
+== Precizãri ==
+
+* Unde este adecvat, se vor utiliza **func?ionale**, în locul recursivitã?ii explicite. Cazurile evidente vor fi **depunctate**.
+* Încerca?i sã exploata?i la maxim **bibliotecile** ''[[http://hackage.haskell.org/package/base-4.7.0.0/docs/Data-List.html|Data.List]]'' ?i ''[[http://hackage.haskell.org/package/containers-0.2.0.1/docs/Data-Sequence.html|Data.Sequence]]''. Ambele biblioteci vã pot fi utile atât pentru construirea tablei de joc, cât ?i pentru proiectarea algoritmilor de parcurgere a acesteia.
+== Resurse ==
+
+* {{:teme15:haskell-kalah:haskell-kalah.zip|Arhiva de pornire}}
+
+Organizarea arhivei ?i modalitatea de rulare a testelor sunt descrise în fi?ierul ''readme.txt''.
+
+== Referin?e ==
+
+* [[http://en.wikipedia.org/wiki/Kalah|Kalah]]
+* [[http://developoid.com/g/pocketmancala/|Pocket Mancala]]
+* [[http://www.flashanywhere.net/en/puzzlegames/1450-mancala.html|Mancala Flash Game]]
+* [[http://en.wikipedia.org/wiki/Minimax|Minimax]]

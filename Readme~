@@ -1,0 +1,66 @@
+Tema2 Paradigme de programare 
+
+Limbaj folosit: Haskell
+Obiectivul temei: Implementarea jocului Kalah
+
+	Observatii:
+		Am implementat toate functiile din Board.hs, precum si euristica simpla descrisa in AISimple.hs
+		Nu am implementat arborele MiniMax. Codul temei contine comentarii detaliate in care este explicat modul meu de implementare.
+		
+
+	Functia move
+
+	In functia move, daca jucatorul aflat la rand sunt eu, atunci parametri functiei MakeMove vor fi (depozitul meu, lista mea) (depozitul adversarului, lista lui)
+	In cazul in care oponentul trebuie sa mute, voi trimite ca parametrii (depozitul oponentului, lista lui inversata) (depozitul meu, lista mea inversata)
+	Am ales aceasta abordare pentru ca am privit jocul in functie de cum este afisata tabla cu functia show. Astefl se observa ca eu va trebui sa fac mutarile de la 
+	stanga la dreapta, in timp ce oponentul va muta in sens invers. Pentru a evita mutarea de la dreapta la stnag cand vine randul oponentului, am ales aceasta 		abordare:                     
+					  lista mea inversata
+			depozitul meu                                 depozitul adversarului
+					lista adversarului inversata  
+
+	
+	Functia makeMove	
+	
+	In functia makeMove, am prima oara doua cazuri: cazul in care mutarea ce trebuie efectuata depaseste un ciclu complet (adica dupa ce am modificat toata lista 								adversarului, trebuie sa modific din nou lista mea)
+							cazul in care mutarea nu depaseste un ciclu complet (acel "13" provine de la numarul de casute ce pot fi modificate
+							la un pas al jocului)
+	Apoi, am tratat alte doua cazuri:
+		Daca playerul care va efectua viitoarea miscare e adversarul(insemnand ca jucatorul curent sunt eu), atunci verific daca intre configuratia tablei 			primita ca parametru si cea rezultata in urma mutarii, trebuie sa mut tot eu sau adversarul
+		Acelasi lucru este valabil si in cazul in care jucatorul curent este adversarul.	
+
+	Variabilele si functiile auxiliare folosite in functia makeMove precum si in makeRotationMove	
+
+	count_seeds = numara semintele din casa selectata
+	
+	seeds_in = semintele ce raman de mutat dupa ce s-au efectuat toate mutarile in cadrul listei jucatorului curent (lista ce include si depozitul acestuia)
+	
+	list_in = intoarce o lista cu acele elemente care au fost modificate in lista initiala a jucatorului curent (care include si casa). Ex: am de mutat 5 seminte din 
+		  casa 3; atunci list_in va contine noile valori pentru casele 4 5 6 si depozitul jucatorului curent
+
+	lastSeedEmptyCell - trateaza cazul in care ultima samanta aterizeaza intr-o casa goala a jucatorului curent , caz in care este posibil ca aceasta samanta impreuna 	 			    cu semintele din casa adversa sa fie mutate in depozitul jucatorului aflat la rand. Spre exemplu daca ultima samanta aterizeaza in casa 4 care e 				    goala si casa patru a adversarului contine 2 seminte, functia va returna depozitul actualizat, lista jucatorului curent actualizata si lista 
+			    adversarului actualizata (adica in casuta 4 nu vor ma exista seminte) 
+
+	seeds_out = semintele ce mai raman de mutat dupa ce s-au efectuat si mutarile din lista adversarului
+
+	list_out = lista cu casutele modificate din lista adversarului. Poate intoarce spre exemplu o lista cu casutele 1,2,3 ale adversarului daca doar acestea au fost
+	         	modificate
+
+	funcAux3 = este o functie de construire in intregime a listei jucatorului curent in urma mutarilor. Trateaza doua cazuri: primul caz este cel in care list_in 			   contine inclusiv depozitul jucatorului curent si se concateneaza doar inceputul listei initiale a jucatorului pana la casuta de la care s-a mutat.
+	   Al doilea caz poate fi ilustrat cu un exemplu: list_in contine casutele 3,4 , caz in care vor trebui adaugate casutele 1 si 2 din lista initiala		     
+           (bineinteles ca in casa 2 vor ramane zero seminte pentru ca de acolo s-a mutat) plus casele 5 si 6 luate tot din lista initiala.
+	   Lista rezultata list_you_ch va contine si depozitul jucatorului curent actualizat si va fi memorat in house_you_ch.
+	list_op_ch = va memora lista oponentului actualizata	  
+	
+	
+	Functia makeRotaionMove
+
+	Functia "makeRotationMove" este apelata de "makeMove". Este de preferat mai intai vizualizarea continutului acelei functii. 
+	Aceasta functie este apelata in cazul in care exista cicluri( adica o mutare presupune modificarea de mai multe ori a unei liste. Spre exemplu, in casuta 5
+	am de mutat 13 seminte, caz in care dupa modificarea listei adversarului vor mai ramane seminte de adaugat).
+	
+	Functia testeaza cazul in care mai sunt cicluri sau seminte de adaugat. Dupa ce se efectueaza toate mutarile penttru modificarea listei jucatorului curent si pe cea 		a adversarului, functia este apelata recursiv cu parametrul zero, reprezentand prima casuta ce va fi modificata in continuare. Adica am adunat o unitate la toate 	  casutele adversarului si urmeaza sa adun din nou casele mele, incepand cu prima (sensul fiind de la stanga la dreapta).
+	In rest, functia are acelasi comportament ca functia "makeMove".
+
+
+
+Dobre Grigore Adelin 323CC

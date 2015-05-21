@@ -1,0 +1,477 @@
+{-
+    Tabla de joc și mutările posibile.
+
+    Modulul exportă numai funcțiile enumerate mai jos, ceea ce înseamnă
+    că doar acestea vor fi vizibile din alte module. Justificarea vizează
+    prevenirea accesului extern la structura obiectelor 'Board', și a eventualei
+    coruperi a consistenței interne a acestora.
+-}
+module Board
+    ( Board  (..)
+    , Player (..)  -- Exportăm și constructorii de date 'You' și 'Opponent'.
+    , House
+    , build
+    , yourSeeds
+    , oppsSeeds
+    , who
+    , isOver
+    , initialBoard
+    , move
+    , scores
+    , successors
+    ) where
+
+import Consecutive
+import Data.List
+{-
+    Jucătorul care urmează să mute.
+-}
+data Player = You | Opponent deriving (Eq, Show)
+
+
+data State = Playing | Stop deriving (Eq, Show)
+
+{-
+    Tipul caselor, definit pentru lizibilitate.
+-}
+type House = Int
+{-
+    *** TODO ***
+
+    Definiți tipul 'Board', astfel încât să rețină informație despre starea
+    jocului, inclusiv tabla de joc.
+
+    Observați că viitorii constructori de date și eventualele câmpuri pe care
+    le veți specifica nu vor apărea în lista de funcții exportate de modul
+    (vezi explicația de la începutul fișierului).
+-}
+
+data Board = Board House House [Int] [Int] Player deriving (Eq)
+{-
+    *** TODO ***
+
+    Instanțiați clasa 'Show' cu tipul 'Board'. Exemplu de reprezentare,
+    unde scorurile sunt aferent jucătorilor 'You', respectiv 'Opponent':
+
+       4  4  4  4  4  4
+     0                  0    Next: You, Playing, Score: (0,0)
+       4  4  4  4  4  4
+-}
+{-
+     Afisarea tablei de joc se face in felul urmator:
+     - in partea de sus se afla lista de case ale adversarului
+     - pe urmatoare linie se regasesc in ordine de la stanga la dreapta: depozitul adversarului, depozitul jucatorului curent, Situatia curenta a jocului
+       (daca jocul continua sau nu, cine e la rand, scorurile jucatorilor)
+-}
+
+instance Show Board where
+    show (Board house1 house2 list1 list2 player) = (displayList list2) ++ "\n" ++ 
+						  (show house2) ++ 
+						  appendList (length list2) ++ (show house1) ++ "    " ++ "Next: " ++ 
+						  (show player) ++ ", " ++ (showGameStatus (Board house1 house2 list1 list2 player)) ++ ", " ++
+						  "Score:" ++ "(" ++ (show house2) ++ "," ++ (show house1) ++ ")" ++ "\n" ++ 							  (displayList list1)
+
+-- Functie ce determina daca jocul se termina sau nu
+showGameStatus :: Board -> [Char]
+	
+showGameStatus (Board house1 house2 list1 list2 player) =
+ 
+	if (isOver (Board house1 house2 list1 list2 player) == True)
+		then 
+			(show Stop)
+		else
+			(show Playing) 
+
+
+elemPrint :: (Eq a, Ord a, Num a, Show a) => a -> String
+elemPrint x
+	| x < 10 = "  " ++ (show x)
+	| otherwise = " " ++ (show x) 
+
+-- Functie folosita pentru afisarea listelor de case ale jucatorilor
+displayList [] = ""
+displayList (x:xs) = (elemPrint x) ++ (displayList xs)
+
+appendList :: Int -> String
+appendList length
+	| length > 0 = "   " ++ appendList (length-1)
+	| otherwise = ""
+
+{-
+    *** TODO BONUS ***
+
+    Instanțiați clasa 'Consecutive', pentru a putea determina dacă în două
+    configurații ale tablei trebuie să mute același jucător.
+-}
+
+instance Consecutive Board where
+
+   (Board house1_1 house2_1 list1_1 list2_1 player_1) >< (Board house1_2 house2_2 list1_2 list2_2 player_2) =
+
+	-- Functia verifica daca diferenta dintre depozitele jucatorului in cele doua table este cu o unitate mai mare decat diferenta
+	--                                	                                  	    dintre ultimele doua case ale adversarului 	
+	if ( (house1_2 - house1_1) == ((last list2_2) - (last list2_1) + 1) )
+		then 
+			True
+		else
+			False
+	
+
+{-
+    *** TODO ***
+
+    Construiește tabla de joc.
+
+    Funcția trebuie să determine dacă jocul este deja încheiat, pe baza
+    conținutului caselor.
+-}
+
+build :: ([Int], Int)  -- Conținutul caselor și al depozitului utilizatorului
+      -> ([Int], Int)  -- Conținutul caselor și al depozitului adversarului
+      -> Player        -- Jucătorul aflat la rând
+      -> Board         -- Tabla construită
+build (list1, house1) (list2, house2) x = Board house1 house2 list1 list2 x
+{-
+    *** TODO ***
+
+    Întoarce conținutul caselor și al depozitului utilizatorului.
+-}
+yourSeeds :: Board -> ([Int], Int)
+yourSeeds (Board house1 _ list1 _ _) = (list1, house1)
+
+{-
+    *** TODO ***
+
+    Întoarce conținutul caselor și al depozitului adversarului.
+-}
+oppsSeeds :: Board -> ([Int], Int)
+oppsSeeds (Board _ house2 _ list2 _) = (list2, house2)
+
+{-
+    *** TODO ***
+
+    Întoarce jucătorul aflat la rând.
+-}
+who :: Board -> Player
+who (Board _ _ _ _ player) = player
+
+{-
+    *** TODO ***
+
+    Întoarce 'True' dacă jocul s-a încheiat.
+-}
+isOver :: Board -> Bool
+
+isOver (Board house1 house2 list1 list2 player) =
+
+	 if ((foldl (+) 0 list1) == 0 || (foldl (+) 0 list2) == 0)
+		then
+			True
+		else
+			False 
+
+{-
+    *** TODO ***
+
+    Tabla inițială.
+-}
+
+generateList :: Int -> [Int]
+generateList len = 
+	if (len > 0) 
+		then 
+			4 : generateList (len-1) 
+		else 
+			[]
+
+initialBoard :: Board
+initialBoard = Board house1 house2 list1 list2 player
+	where
+	        house1 = 0
+		house2 = 0
+		list1 = generateList 6
+		list2 = generateList 6 
+		player = You
+
+{-
+    *** TODO ***
+
+    Realizează o mutare pornind de la casa furnizată ca parametru, în funcție
+    de configurația actuală a tablei și de jucătorul aflat la rând.
+
+    Întoarce aceeași configurație dacă mutarea nu poate fi efectuată
+    din diverse motive, precum numărul eronat al casei, sau casa goală.
+-}
+
+{-
+	In functia move, daca jucatorul aflat la rand sunt eu, atunci parametri functiei MakeMove vor fi (depozitul meu, lista mea) (depozitul adversarului, lista lui)
+	In cazul in care oponentul trebuie sa mute, voi trimite ca parametrii (depozitul oponentului, lista lui inversata) (depozitul meu, lista mea inversata)
+	Am ales aceasta abordare pentru ca am privit jocul in functie de cum este afisata tabla cu functia show. Astefl se observa ca eu va trebui sa fac mutarile de la 
+	stanga la dreapta, in timp ce oponentul va muta in sens invers. Pentru a evita mutarea de la dreapta la stnag cand vine randul oponentului, am ales aceasta 		abordare:                     
+					  lista mea inversata
+			depozitul meu                                 depozitul adversarului
+					lista adversarului inversata
+-}
+move :: House -> Board -> Board
+
+move h (Board house1 house2 list1 list2 player) =
+	if ((h > 6) || (h < 1))
+		 then 
+			Board house1 house2 list1 list2 player
+		 else
+			if (player == You)
+				then 
+					if ((list1 !! (h-1)) == 0)
+						then 
+							Board house1 house2 list1 list2 You
+						else		
+							makeMove h (house1, list1) (house2, list2) Opponent
+				else
+					if (((reverse list2) !! (6-h)) == 0)
+						then 
+							Board house1 house2 list1 list2 Opponent
+						else		
+							makeMove (7 - h) (house2, (reverse list2)) (house1, (reverse list1)) You
+
+makeRotationMove :: Int
+		 -> Int
+		 -> Int  
+		 ->(House, [Int])
+    		 ->(House, [Int])
+ 		 -> Player
+		 -> Board
+		 -> Board
+	
+{-
+	Functia "makeRotationMove" este apelata de "makeMove". Este de preferat mai intai vizualizarea continutului acelei functii. 
+	Aceasta functie este apelata in cazul in care exista cicluri( adica o mutare presupune modificarea de mai multe ori a unei liste. Spre exemplu, in casuta 5
+	am de mutat 13 seminte, caz in care dupa modificarea listei adversarului vor mai ramane seminte de adaugat).
+	
+	Functia testeaza cazul in care mai sunt cicluri sau seminte de adaugat. Dupa ce se efectueaza toate mutarile penttru modificarea listei jucatorului curent si pe cea 		a adversarului, functia este apelata recursiv cu parametrul zero, reprezentand prima casuta ce va fi modificata in continuare. Adica am adunat o unitate la toate 	  casutele adversarului si urmeaza sa adun din nou casele mele, incepand cu prima (sensul fiind de la stanga la dreapta).
+	In rest, functia are acelasi comportament ca functia "makeMove".
+-}
+
+makeRotationMove hs cycles count_seeds (house_you, list_you) (house_op, list_op) player (Board house1 house2 list1 list2 play) =
+	if ((cycles > 0) || (count_seeds > 0))
+		then 		
+			if (((hs + count_seeds) `div` 7) == 0)     				
+			  	 then  
+					makeRotationMove hs (cycles - 1) seeds_in (house_you_ch, (reverse $ tail $ reverse list_you_ch)) (house_op, list_op_ch) 													 	  player (Board house1 house2 list1 list2 play) 	
+				 else	
+					makeRotationMove 0 (cycles - 1) seeds_out (house_you_ch, (reverse $ tail $ reverse list_you_ch)) 
+								    (house_op, list_op_ch) player (Board house1 house2 list1 list2 play)
+	else
+		if (player == Opponent)
+			then
+				if ((Board house1 house2 list1 list2 play) >< (Board  house_you house_op list_you list_op player) == True)
+					then
+						Board  house_you house_op list_you list_op You
+					else
+						Board  house_you house_op list_you list_op player
+			else
+				if ((Board house1 house2 list1 list2 play) >< (Board  house_you house_op list_you list_op player) == True)
+					then	
+						Board  house_op house_you (reverse list_op) (reverse list_you) Opponent
+					else
+						Board  house_op house_you (reverse list_op) (reverse list_you) player
+		
+	where
+		(seeds_in, list_in) = moveYourSeedsInside hs count_seeds (list_you ++ [house_you])
+		(house_you_l, list_in_ch, list_op_l) = lastSeedEmptyCell hs house_you (hs + count_seeds) list_in list_you list_op 
+		(seeds_out, list_out) = moveYourSeedsOutside seeds_in list_op_l
+		list_you_ch = funcAux2 hs house_you_l (count_seeds + hs)  list_you list_in_ch     	
+		house_you_ch = last list_you_ch
+		list_op_ch = funcAux seeds_in list_op_l list_out	
+
+	
+
+funcAux2 :: House -> House -> Int -> [Int] -> [Int] -> [Int]
+
+funcAux2 hs house_you seeds list_you list_in = 
+	if (hs /= 0)
+		then
+			funcAux3 hs house_you seeds list_you list_in
+		else
+			list_in ++ reverse (take (7 - length list_in) (reverse (list_you ++ [house_you])))
+
+funcAux :: Int -> [Int] -> [Int] -> [Int]
+
+funcAux seeds_in list_op list_out = 
+	if (seeds_in > 6)
+		then 
+			(reverse list_out)		
+		else 
+			(take (6 - seeds_in) list_op) ++ (reverse list_out)
+	 
+
+makeMove :: Int  
+	 ->(House, [Int])
+    	 ->(House, [Int])
+ 	 -> Player
+	 -> Board
+
+{-
+	In functia makeMove, am prima oara doua cazuri: cazul in care mutarea ce trebuie efectuata depaseste un ciclu complet (adica dupa ce am modificat toata lista 								adversarului, trebuie sa modific din nou lista mea)
+							cazul in care mutarea nu depaseste un ciclu complet (acel "13" provine de la numarul de casute ce pot fi modificate
+							la un pas al jocului)
+	Apoi, am tratat alte doua cazuri:
+		Daca playerul care va efectua viitoarea miscare e adversarul(insemnand ca jucatorul curent sunt eu), atunci verific daca intre configuratia tablei 			primita ca parametru si cea rezultata in urma mutarii, trebuie sa mut tot eu sau adversarul
+		Acelasi lucru este valabil si in cazul in care jucatorul curent este adversarul.	
+-}
+		
+makeMove hs (house_you, list_you) (house_op, list_op) player =
+	
+	if (((hs + count_seeds) `div` 13) == 0)
+		then   				
+			if (player == Opponent)
+				then
+					if ((Board house_you house_op list_you list_op player) >< (Board  house_you_ch house_op (reverse $ tail $ reverse list_you_ch) 															list_op_ch player))
+						then
+							Board  house_you_ch house_op (reverse $ tail $ reverse list_you_ch) list_op_ch You
+						else
+							Board  house_you_ch house_op (reverse $ tail $ reverse list_you_ch) list_op_ch player
+				else
+					if ((Board house_you house_op list_you list_op player) >< (Board  house_you_ch house_op (reverse $ tail $ reverse list_you_ch) 
+													        list_op_ch player))
+						then		
+							Board  house_op house_you_ch (reverse list_op_ch) (tail $ reverse list_you_ch) Opponent 			
+						else
+							Board  house_op house_you_ch (reverse list_op_ch) (tail $ reverse list_you_ch) player
+			
+		else
+			makeRotationMove hs ((hs + count_seeds) `div` 13) count_seeds (house_you, list_you) (house_op, list_op) player 
+											(Board house_you house_op list_you list_op player)
+
+{-
+	count_seeds = numara semintele din casa selectata
+	seeds_in = semintele ce raman de mutat dupa ce s-au efectuat toate mutarile in cadrul listei jucatorului curent (lista ce include si depozitul acestuia)
+	
+	list_in = intoarce o lista cu acele elemente care au fost modificate in lista initiala a jucatorului curent (care include si casa). Ex: am de mutat 5 seminte din 
+	casa 3; atunci list_in va contine noile valori pentru casele 4 5 6 si depozitul jucatorului curent
+
+	lastSeedEmptyCell - trateaza cazul in care ultima samanta aterizeaza intr-o casa goala a jucatorului curent , caz in care este posibil ca aceasta samanta impreuna 	 			    cu semintele din casa adversa sa fie mutate in depozitul jucatorului aflat la rand. Spre exemplu daca ultima samanta aterizeaza in casa 4 care e 				    goala si casa patru a adversarului contine 2 seminte, functia va returna depozitul actualizat, lista jucatorului curent actualizata si lista 
+			    adversarului actualizata (adica in casuta 4 nu vor ma exista seminte) 
+
+	seeds_out = semintele ce mai raman de mutat dupa ce s-au efectuat si mutarile din lista adversarului
+	list_out = lista cu casutele modificate din lista adversarului. Poate intoarce spre exemplu o lista cu casutele 1,2,3 ale adversarului daca doar acestea au fost
+	         	modificate
+	funcAux3 = este o functie de construire in intregime a listei jucatorului curent in urma mutarilor. Trateaza doua cazuri: primul caz este cel in care list_in 			   contine inclusiv depozitul jucatorului curent si se concateneaza doar inceputul listei initiale a jucatorului pana la casuta de la care s-a mutat.
+	   Al doilea caz poate fi ilustrat cu un exemplu: list_in contine casutele 3,4 , caz in care vor trebui adaugate casutele 1 si 2 din lista initiala		     
+           (bineinteles ca in casa 2 vor ramane zero seminte pentru ca de acolo s-a mutat) plus casele 5 si 6 luate tot din lista initiala.
+	   Lista rezultata list_you_ch va contine si depozitul jucatorului curent actualizat si va fi memorat in house_you_ch.
+	list_op_ch = va memora lista oponentului actualizata	  
+	
+-}			
+	where
+		count_seeds  = list_you !! (hs - 1)		
+		(seeds_in, list_in) = moveYourSeedsInside hs count_seeds (list_you ++ [house_you])
+		(house_you_l, list_in_ch, list_op_l) = lastSeedEmptyCell hs house_you (hs + count_seeds) list_in list_you list_op 
+		(seeds_out, list_out) = moveYourSeedsOutside seeds_in list_op_l
+		list_you_ch  = funcAux3 hs house_you_l (count_seeds + hs) list_you list_in_ch	
+		house_you_ch = last list_you_ch
+		list_op_ch   = (take (6 - seeds_in) list_op_l) ++ (reverse list_out)
+				 	
+
+
+lastSeedEmptyCell ::  House -> House -> Int -> [Int] -> [Int] -> [Int] -> (House, [Int], [Int])
+
+lastSeedEmptyCell hs house_you nr_seeds list_in list_you list_op = 
+	if ((nr_seeds < 7) && ((list_op !! (nr_seeds - 1)) /= 0))
+		then 
+			if ((last list_in) == 1)
+				then
+					((house_you + 1 + (list_op !! (nr_seeds - 1))), ((take (nr_seeds - hs - 1) list_in) ++ [0]), ((take (nr_seeds - 1) 
+							  list_op) ++ [0] ++ (reverse (take (6 - nr_seeds) (reverse list_op) ))) )
+				else
+				    	(house_you, list_in, list_op)
+		else
+			(house_you, list_in, list_op)
+
+	 	                                 													
+funcAux3 :: House -> House -> Int -> [Int] -> [Int] -> [Int]
+
+funcAux3 hs house_you seeds list_you list_in = 
+	if (seeds >= 7)
+		then
+			take (hs - 1) list_you ++ [0] ++ list_in
+		else
+			take (hs - 1) list_you ++ [0] ++ list_in ++ (reverse (take (7 - seeds) (reverse (list_you ++ [house_you]))))
+
+
+moveYourSeedsInside :: Int -> Int -> [Int] -> (Int, [Int])
+
+moveYourSeedsInside h count your_l = 
+	if ((count == 0) || (h == 7))
+		then 
+			(count, [])
+		else (fst (moveYourSeedsInside (h+1) (count-1) your_l), ((your_l !! h) + 1) : snd (moveYourSeedsInside (h+1) (count-1) your_l))
+
+
+createOppHouseVector :: Int -> Int -> [Int] -> (Int, [Int])
+
+createOppHouseVector h opp_count opp_l = 	
+	if ((opp_count == 0) || (h == 7))
+		then 
+			(opp_count, [])
+		else (fst (createOppHouseVector (h + 1) (opp_count - 1) opp_l), ((opp_l !! (6 - h)) + 1) : snd (createOppHouseVector (h + 1) (opp_count - 1) opp_l))	
+
+
+moveYourSeedsOutside :: Int -> [Int] -> (Int, [Int])
+
+moveYourSeedsOutside count opp_l =
+	if (count == 0)
+		then	
+			(count,[])
+  		else    
+			createOppHouseVector 1 count opp_l
+{-
+    *** TODO ***
+
+    Întoarce scorurile (utilizator, adversar).
+
+    Calculul trebuie să țină cont de eventuala încheiere a jocului.
+-}
+scores :: Board -> (Int, Int)
+
+scores (Board house1 house2 list1 list2 player) = 
+	if (isOver (Board house1 house2 list1 list2 player) == False)
+		then 
+			(house1, house2)
+		else
+			( (foldl (+) house1 list1) , (foldl (+) house2 list2) )
+
+{-
+    *** TODO ***
+
+    Întoarce perechile casă-configurație, reprezentând mutările care pot fi
+    făcute într-un singur pas, pornind de la configurația actuală.
+-}
+
+generateSolutions :: Int -> Board -> [(House, Board)]
+
+generateSolutions h (Board house1 house2 list1 list2 player) = 
+
+	if (h < 7)
+	then 	
+		if (player == You)
+			then 
+				if ((list1 !! (h-1)) /= 0)
+					then
+						[(h , move h (Board house1 house2 list1 list2 player))] ++ (generateSolutions (h+1) (Board house1 house2 list1 list2 player))
+					else
+						(generateSolutions (h+1) (Board house1 house2 list1 list2 player))
+			else
+				if ((list2 !! (h-1)) /= 0)
+					then
+						[(h , move h (Board house1 house2 list1 list2 player))] ++ (generateSolutions (h+1) (Board house1 house2 list1 list2 player))
+					else
+						(generateSolutions (h+1) (Board house1 house2 list1 list2 player))
+	else
+		[]					
+			
+successors :: Board -> [(House, Board)]
+
+successors (Board house1 house2 list1 list2 player) = 
+	
+	generateSolutions 1 (Board house1 house2 list1 list2 player)
+		
